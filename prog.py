@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# This file is part of unix_intro (github.com/U8NWXD/unix_intro.git),
+# This file is part of unix_intro (github.com/U8NWXD/unix_intro),
 # which is distributed under the terms in the LICENSE.txt file in the
 # root folder of the project.
 # Copyright (c) 2020 U8N WXD (github.com/U8NWXD) <cs.temporary@icloud.com>
@@ -12,6 +12,9 @@ from datetime import timedelta
 import filecmp
 import os
 import time
+
+
+DISABLE_EPILOG_KEY = "UNIX_INTRO_DISABLE_EPILOG"
 
 
 def handler_edited(args):
@@ -43,9 +46,14 @@ def main():
     parser_edited.add_argument("file1", type=str, action="store")
     parser_edited.add_argument("file2", type=str, action="store")
 
-
     args = parser.parse_args()
     args.func(args)
+
+    if not os.getenv(DISABLE_EPILOG_KEY, False):
+        print(
+            "This program is part of unix_intro "
+            "(https://github.com/U8NWXD/unix_intro)"
+        )
 
 
 if __name__ == "__main__":

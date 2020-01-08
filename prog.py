@@ -4,14 +4,15 @@
 # root folder of the project.
 # Copyright (c) 2020 U8N WXD (github.com/U8NWXD) <cs.temporary@icloud.com>
 
-# TODO: Add huge comment
-
 
 from __future__ import print_function
 
 import argparse
 from datetime import timedelta
 import filecmp
+import getpass
+import hashlib
+import imp
 import os
 from random import SystemRandom
 import sys
@@ -19,6 +20,22 @@ import time
 
 
 DISABLE_EPILOG_KEY = "UNIX_INTRO_DISABLE_EPILOG"
+PBKDF2_ITERS = 100000
+PBKDF2_ALGO = "sha512"
+PBKDF2_SALT_BYTES = 16
+HASH_FILE = "secret_hash.txt"
+
+
+def hash_password(salt, password):
+    return hashlib.pbkdf2_hmac(
+        PBKDF2_ALGO, password, salt, PBKDF2_ITERS).encode("hex")
+
+
+def check_password(submitted, stored):
+    # Stored is a string: "[hex-encoded salt] [hex-encoded hash]"
+    salt_str, hash_str = stored.split()
+    expected_hash = hash_password(salt_str, submitted)
+    return expected_hash == hash_str
 
 
 def handler_edited(args):
@@ -47,6 +64,28 @@ def handler_pass(args):
         print(word)
 
 
+def handler_secret(args):
+    print("There is a file in /usr/ called 'words'.")
+    print("Count the words in that file that have the 'not' prefix.")
+    print("Assume the prefix takes the forms: il-, ir-, im-, in-.")
+    password = getpass.getpass("Password: ")
+    with open(HASH_FILE, "r") as f:
+        stored_hash = f.read().rstrip()
+    if check_password(password, stored_hash):
+        secret = imp.load_source("secret", ".secret.py")
+        print(secret.secret_message())
+    else:
+        print("Incorrect")
+
+
+def handler_hash(args):
+    rand = SystemRandom()
+    salt = rand.getrandbits(16)
+    salt_str = format(salt, "x")
+    hash_str = hash_password(salt_str, args.password)
+    print(salt_str + " " + hash_str)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="A program to help you experiment with some UNIX commands"
@@ -72,6 +111,16 @@ def main():
         "--seed", type=int, action="store", default=None,
         help="seed to make behavior deterministic"
     )
+
+    parser_hash = subparsers.add_parser(
+        "hash", description="Generate a hash string for a password")
+    parser_hash.set_defaults(func=handler_hash)
+    parser_hash.add_argument(
+        "password", type=str, action="store"
+    )
+
+    parser_secret = subparsers.add_parser("secret")
+    parser_secret.set_defaults(func=handler_secret)
 
     args = parser.parse_args()
     args.func(args)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # This file is part of unix_intro (github.com/U8NWXD/unix_intro),
 # which is distributed under the terms in the LICENSE.txt file in the
 # root folder of the project.

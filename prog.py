@@ -12,7 +12,6 @@ from datetime import timedelta
 import filecmp
 import getpass
 import hashlib
-import imp
 import os
 from random import SystemRandom
 import sys
@@ -24,11 +23,18 @@ PBKDF2_ITERS = 100000
 PBKDF2_ALGO = "sha512"
 PBKDF2_SALT_BYTES = 16
 HASH_FILE = "secret_hash.txt"
+ENCODING = "utf-8"
 
 
 def hash_password(salt, password):
-    return hashlib.pbkdf2_hmac(
-        PBKDF2_ALGO, password, salt, PBKDF2_ITERS).encode("hex")
+    salt_bytes = salt.encode(ENCODING)
+    pass_bytes = password.encode(ENCODING)
+    digest = hashlib.pbkdf2_hmac(
+        PBKDF2_ALGO, pass_bytes, salt_bytes, PBKDF2_ITERS)
+    try:
+        return digest.hex()
+    except AttributeError:
+        return digest.encode('hex')
 
 
 def check_password(submitted, stored):
@@ -72,8 +78,9 @@ def handler_secret(args):
     with open(HASH_FILE, "r") as f:
         stored_hash = f.read().rstrip()
     if check_password(password, stored_hash):
-        secret = imp.load_source("secret", ".secret.py")
-        print(secret.secret_message())
+        with open (".secret", "r") as f:
+            secret = f.read().strip()
+            print(secret)
     else:
         print("Incorrect")
 
